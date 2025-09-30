@@ -1,6 +1,6 @@
 # Fine tuning Gemma3
 
-### 1. preparing input data
+### 1. Preparing the input data
 `/u/lsong/labspace/git_repo/PDF_benchmarking/fine_tunning/create_input_dict.py`
 
 This script will generate a pickle file that stores 1000 training ready samples.
@@ -35,18 +35,29 @@ They are all in the format of
 user prompt and system message stored in 
 `/u/lsong/labspace/git_repo/PDF_benchmarking/fine_tunning/lei_prompts.py`
 
-### 2. training LoRA
+### 2. Training LoRA
 `/u/lsong/labspace/git_repo/PDF_benchmarking/fine_tunning/train_lora.py`
 
 This script train the Gemma3 base model and generate an adapter model to 
 `/.mounts/labs/courtotlab/scratch/{model_name}/{lora_dir_name}`
 
-### 3. prepare test dictionary
+### 3. Preparing the test dictionary
 `/u/lsong/labspace/git_repo/PDF_benchmarking/fine_tunning/create_test_dict.py`
 
 Even there is a test dataset generated during the training phase, if any evaluation is needed this is the step to generate another dataset similar to the input, except there is no assistant or expected_report given in the dictionary. The expected_report will be stored in a sepearated key in the final dictionary. Its also output a pickle file
 
-### 4. running the base LLM with LoRA and test dictionary
+### 4. Running the base LLM with LoRA and test dictionary
+`/u/lsong/labspace/git_repo/PDF_benchmarking/fine_tunning/run_fine_tuning_model_only.py`
+
+This script will send PDFs into the LEI and generate an output to `/u/lsong/labspace/lei_notebook/data/output_{model_name}_1000ct1.pkl`. This pickle file will include the prediction results in format of listed dictionaries:
+```
+[{
+    "response": response,
+    "expected_report": expected_report  # source from the json generating the PDF
+},...]
+```
+
+### 5. Analyzing and visualizing of the results
 `/u/lsong/labspace/git_repo/PDF_benchmarking/getJSON/compareJSON_linghao.py`
 
 This script will generate a report in `/u/lsong/labspace/lei_notebook/data/`. It includes LLM, False Positives, False Negatives, Incorrect Extractions, Correct Matches, Precision, Recall, F1score, Accuracy, Parsed,H ospital, Prompt, Distressed.
