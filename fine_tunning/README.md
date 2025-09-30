@@ -52,3 +52,23 @@ Even there is a test dataset generated during the training phase, if any evaluat
 This script will generate a report in `/u/lsong/labspace/lei_notebook/data/`. It includes LLM, False Positives, False Negatives, Incorrect Extractions, Correct Matches, Precision, Recall, F1score, Accuracy, Parsed,H ospital, Prompt, Distressed.
 These information is ready for further analysis.
 
+### TODO:
+Change expected values and input prompts with hospital specific templates or keys
+For example:
+The prompt for SickKids should only ask the LEI to extract
+```num_tested_genes
+reference_genome
+gene_symbol
+chromosome
+hgvsg
+hgvsc
+hgvsp
+transcript_id
+exon
+zygosity
+interpretation
+mafaf
+mega_hgvs
+type
+```
+As the expected json, it should also only include these information. Although, this change may cause the model not able to understand new hospital's records. But it will likely to increse the performance of the provided templates. 

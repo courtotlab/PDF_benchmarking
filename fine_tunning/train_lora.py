@@ -21,6 +21,9 @@ random.shuffle(dataset)
 train_dataset = dataset[:int((0.9*len(dataset)))]
 test_dataset = dataset[int((0.9*len(dataset))):]
 
+print("train dataset length: ", len(train_dataset))
+print("test dataset length: ", len(test_dataset))
+
 import torch
 # Check if GPU benefits from bfloat16
 print(torch.cuda.get_device_capability())
@@ -57,7 +60,7 @@ processor = AutoProcessor.from_pretrained(model_id, local_files_only=True)
 from peft import LoraConfig
 
 peft_config = LoraConfig(
-    lora_alpha=16,
+    lora_alpha=64,
     lora_dropout=0.05,
     r=16,
     bias="none",
@@ -77,14 +80,14 @@ args = SFTConfig(
     max_length=1024,                        # max sequence length for model and packing of the dataset
     packing=False,                          # Groups multiple samples in the dataset into a single sequence
     num_train_epochs=3,                     # number of training epochs
-    per_device_train_batch_size=1,          # batch size per device during training
-    per_device_eval_batch_size=1,
+    per_device_train_batch_size=8,          # batch size per device during training
+    per_device_eval_batch_size=1,           # batch size for evaluation
     gradient_accumulation_steps=4,          # number of steps before performing a backward/update pass
     gradient_checkpointing=True,            # use gradient checkpointing to save memory
-    optim="adamw_torch_fused",              # use fused adamw optimizer
+    optim="adamw_torch",                    # use fused adamw optimizer
     logging_steps=10,                       # log every 10 steps
     save_strategy="epoch",                  # save checkpoint every epoch
-    learning_rate=2e-4,                     # learning rate, based on QLoRA paper
+    learning_rate=1e-4,                     # learning rate, based on QLoRA paper
     fp16=True if bnb_4bit_compute_dtype == torch.float16 else False,   # use float16 precision
     bf16=True if bnb_4bit_compute_dtype == torch.bfloat16 else False,   # use bfloat16 precision
     max_grad_norm=0.3,                      # max gradient norm based on QLoRA paper
@@ -93,7 +96,7 @@ args = SFTConfig(
     push_to_hub=False,                      # push model to hub
     do_eval=True,                           # enable evaluation
     eval_strategy="steps",                  # after x steps do evaluation
-    eval_steps=10,                         # evaluation steps
+    eval_steps=10,                          # evaluation steps
     report_to="tensorboard",                # report metrics to tensorboard
     dataset_kwargs={
         "add_special_tokens": False,        # We template with special tokens
