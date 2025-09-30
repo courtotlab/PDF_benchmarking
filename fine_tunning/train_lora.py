@@ -11,27 +11,32 @@ print(model_id)
 wanted_count = 1000
 
 import pickle
-import numpy as np
+import random
 
 with open(f"{pkl_dir}mock_data_train_input_{wanted_count}ct.pkl", "rb") as f:
     dataset = pickle.load(f)
 
-train_dataset, test_dataset = np.split(dataset, [int(len(dataset)*0.9)])
+random.shuffle(dataset)
+
+train_dataset = dataset[:int((0.9*len(dataset)))]
+test_dataset = dataset[int((0.9*len(dataset))):]
 
 import torch
 # Check if GPU benefits from bfloat16
 print(torch.cuda.get_device_capability())
 if torch.cuda.get_device_capability()[0] < 8:
     bnb_4bit_compute_dtype = torch.float16
+    attn_impl = "eager"
     #    raise ValueError("GPU does not support bfloat16, please use a GPU that supports bfloat16.")
 else:
     bnb_4bit_compute_dtype = torch.bfloat16 #bfloat16 is only supported on Ampere or newer GPU
+    attn_impl = "eager"
 
 from transformers import AutoProcessor, AutoModelForImageTextToText, BitsAndBytesConfig
 
 # Define model init arguments
 model_kwargs = dict(
-    attn_implementation="eager", # Use "flash_attention_2" when running on Ampere or newer GPU
+    attn_implementation=attn_impl, # Use "flash_attention_2" when running on Ampere or newer GPU
     torch_dtype=bnb_4bit_compute_dtype,
     device_map="auto", # Let torch decide how to load the model
 )
@@ -71,8 +76,9 @@ args = SFTConfig(
     output_dir=model_id,                    # directory to save and repository id
     max_length=1024,                        # max sequence length for model and packing of the dataset
     packing=False,                          # Groups multiple samples in the dataset into a single sequence
-    num_train_epochs=1,                     # number of training epochs
+    num_train_epochs=3,                     # number of training epochs
     per_device_train_batch_size=1,          # batch size per device during training
+    per_device_eval_batch_size=1,
     gradient_accumulation_steps=4,          # number of steps before performing a backward/update pass
     gradient_checkpointing=True,            # use gradient checkpointing to save memory
     optim="adamw_torch_fused",              # use fused adamw optimizer
@@ -86,10 +92,9 @@ args = SFTConfig(
     lr_scheduler_type="constant",           # use constant learning rate scheduler
     push_to_hub=False,                      # push model to hub
     do_eval=True,                           # enable evaluation
-    evaluation_strategy="steps",            # after x steps do evaluation
-    eval_steps=75,                          # evaluation steps
+    eval_strategy="steps",                  # after x steps do evaluation
+    eval_steps=10,                         # evaluation steps
     report_to="tensorboard",                # report metrics to tensorboard
-    evaluate_during_training=True,          # allow evaluate while training
     dataset_kwargs={
         "add_special_tokens": False,        # We template with special tokens
         "append_concat_token": True,        # Add EOS token as separator token between examples
@@ -112,10 +117,10 @@ def process_vision_info(messages: list[dict]) -> list[Image.Image]:
         # Check each content element for images
         for element in content:
             if isinstance(element, dict) and (
-                "image" in element or element.get("type") == "image"
+                "image" in element.keys() or element.get("type") == "image"
             ):
                 # Get the image and convert to RGB
-                if "image" in element:
+                if "image" in element.keys():
                     image = element["image"]
                 else:
                     image = element
@@ -132,7 +137,7 @@ def collate_fn(examples):
             example["messages"], add_generation_prompt=False, tokenize=False
         )
         texts.append(text.strip())
-        images.extend(image_inputs)
+        images.append(image_inputs if image_inputs else None)
 
     # Tokenize the texts and process the images
     batch = processor(text=texts, images=images, return_tensors="pt", padding=True)
@@ -181,9 +186,10 @@ trainer.save_model(f"{args.output_dir}{wanted_count}ct1")
 
 log_history = trainer.state.log_history
 
-with open(f"{args.output_dir}training.log", 'w') as f:
-    for line in log_history:
-        f.write(line+"\n")
+import json
+with open(f"{args.output_dir}/training.log", "w") as f:
+    for rec in log_history:
+        f.write(json.dumps(rec) + "\n")
 
 end = time.time()
 length = end - start
@@ -194,3 +200,5 @@ print("trainning takes: ",length," seconds")
 del model
 del trainer
 torch.cuda.empty_cache()
+
+#test section

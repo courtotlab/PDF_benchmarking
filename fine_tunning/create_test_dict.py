@@ -1,6 +1,6 @@
 mock_data_dir = "/.mounts/labs/courtotlab/private/jweile/projects/lei_mockup_generator/out3/"
 output_dir = "/u/lsong/labspace/lei_notebook/data/"
-wanted_count = 200
+wanted_count = 1000
 model_name = "general"
 
 print(f"{output_dir}output_{model_name}_{str(wanted_count)}ct.pkl")

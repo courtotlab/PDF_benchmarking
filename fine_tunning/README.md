@@ -20,7 +20,7 @@ They are all in the format of
                     },
                     {
                         "type": "image",
-                        "text": sample["image"],
+                        "image": sample["image"],
                     }, #more images here
                     ]
             },

@@ -862,9 +862,10 @@ def linghao_code(data_dir, mock_data_test_output):
         ovr = pd.concat([ovr, pd.DataFrame([temp_row])], ignore_index=True)
 
     # Save results
-    ovr.to_csv(f"{data_dir}{mock_data_test_output}_Hospitalfinal.csv", index=False)
+    with open(f"{data_dir}{mock_data_test_output}_Hospitalfinal.csv", "w") as f:
+        ovr.to_csv(f, index=False)
 
 if __name__ == "__main__":
     data_dir = "/u/lsong/labspace/lei_notebook/data/"
-    mock_data_test_output = "output_gemma-3-27b-it_200ct.pkl"
+    mock_data_test_output = "output_gemma-3-27b-it_1000ct.pkl"
     linghao_code(data_dir, mock_data_test_output)

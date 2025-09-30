@@ -1,14 +1,14 @@
 import os
 os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
 
-wanted_count = 200
+wanted_count = 1000
 
 model_name = "gemma-3-27b-it" #gemma-3n-E2B-it-finetuned #gemma-3-27b-it
 GEMMA_PATH = f"/.mounts/labs/courtotlab/scratch/{model_name}/" #@param ["google/gemma-3n-E2B-it", "google/gemma-3n-E4B-it"]
 LORA_PATH = f"/.mounts/labs/courtotlab/scratch/{model_name}/1000ct/"
 output_dir = "/u/lsong/labspace/lei_notebook/data/"
-pickle_dir = "/u/lsong/labspace/lei_notebook/data/output_general_200ct.pkl"
-
+pickle_dir = "/u/lsong/labspace/lei_notebook/data/output_general_1000ct.pkl"
+max_tokens = 5000
 
 print(f"{output_dir}output_{model_name}_{str(wanted_count)}ct.pkl")
 
@@ -31,16 +31,13 @@ peft_config = LoraConfig(
 
 # load base model
 from transformers import AutoModelForImageTextToText, AutoProcessor
-from peft import PeftModel
 
 processor = AutoProcessor.from_pretrained(GEMMA_PATH, local_files_only=True)
 
 model = AutoModelForImageTextToText.from_pretrained(GEMMA_PATH, torch_dtype="auto", device_map="auto", local_files_only=True)
 
 #load LoRA adapter
-#model.load_adapter(LORA_PATH, adapter_name="adapter_model", peft_config=peft_config)
-#loading LoRA from Peft model
-model = PeftModel.from_pretrained(model, f"{LORA_PATH}adapter_model")
+model.load_adapter(LORA_PATH, adapter_name="adapter_model", peft_config=peft_config)
 
 print(f"Device: {model.device}")
 print(f"DType: {model.dtype}")
@@ -136,7 +133,7 @@ for i in range(len(dataset)):
     key = dataset_back[i]["mock_uuids"]
      
     #initialize chat state  
-    response = chat.send_message(dataset[i]["messages"], max_tokens=5000)
+    response = chat.send_message(dataset[i]["messages"], max_tokens=max_tokens)
     
     output_dict[key] = {
        "response": response,
@@ -144,7 +141,8 @@ for i in range(len(dataset)):
         }
 
 print(f"done running {model_name} with {wanted_count} cases")
+print(f"with {max_tokens} as max_tokens")
 
 import pickle
-with open(f"{output_dir}output_{model_name}_{str(wanted_count)}ct_peft.pkl", "wb") as f:
+with open(f"{output_dir}output_{model_name}_{str(wanted_count)}ct.pkl", "wb") as f:
     pickle.dump(output_dict, f)

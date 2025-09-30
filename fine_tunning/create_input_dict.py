@@ -182,7 +182,3 @@ import pickle
 #write generated data to pkl file
 with open(f'{pkl_dir}mock_data_train_input_{wanted_count}ct.pkl', 'wb') as f:
     pickle.dump(dataset, f)
-
-
-
-      
