@@ -1,6 +1,10 @@
 #import os
 #os.environ["CUDA_VISIBLE_DEVICES"] = "0"  # specify which GPU(s) to use
 
+#2 reasons for validation loss is consistantly lower than training loss
+#1. training batch is much larger than validation batch, so training loss is training_batch * training_loss, validation loss is validation_batch * validation_loss
+#2. checkout the dropout rate in the validation. The dropout rate is 0.05, so 5% of the model is not used in training, but all the model is used in validation, so the validation loss is lower than training loss
+
 #loading training data
 pkl_dir = "/u/lsong/labspace/lei_notebook/data/"
 
@@ -18,8 +22,8 @@ with open(f"{pkl_dir}mock_data_train_input_{wanted_count}ct.pkl", "rb") as f:
 
 random.shuffle(dataset)
 
-train_dataset = dataset[:int((0.9*len(dataset)))]
-test_dataset = dataset[int((0.9*len(dataset))):]
+train_dataset = dataset[:int((0.5*len(dataset)))]
+test_dataset = dataset[int((0.5*len(dataset))):]
 
 print("train dataset length: ", len(train_dataset))
 print("test dataset length: ", len(test_dataset))
@@ -61,7 +65,7 @@ from peft import LoraConfig
 
 peft_config = LoraConfig(
     lora_alpha=64,
-    lora_dropout=0.05,
+    lora_dropout=0,
     r=16,
     bias="none",
     target_modules="all-linear",
@@ -81,10 +85,10 @@ args = SFTConfig(
     packing=False,                          # Groups multiple samples in the dataset into a single sequence
     num_train_epochs=3,                     # number of training epochs
     per_device_train_batch_size=2,          # batch size per device during training
-    per_device_eval_batch_size=1,           # batch size for evaluation
+    per_device_eval_batch_size=2,           # batch size for evaluation
     gradient_accumulation_steps=4,          # number of steps before performing a backward/update pass
     gradient_checkpointing=True,            # use gradient checkpointing to save memory
-    optim="adamw_torch",                    # used to use fused adamw optimizer
+    optim="adamw_torch_fused",                    # used to use fused adamw optimizer
     logging_steps=10,                       # log every 10 steps
     save_strategy="epoch",                  # save checkpoint every epoch
     learning_rate=1e-4,                     # learning rate, based on QLoRA paper
@@ -147,21 +151,26 @@ def collate_fn(examples):
 
     # The labels are the input_ids, and we mask the padding tokens and image tokens in the loss computation
     labels = batch["input_ids"].clone()
+    tok = processor.tokenizer
+    
+    special_ids = set()
 
-    # Mask image tokens
-    image_token_id = [
-        processor.tokenizer.convert_tokens_to_ids(
-            processor.tokenizer.special_tokens_map["boi_token"]
-        )
-    ]
+    for key in ["boi_token", "eoi_token", "image_token", "image_pad_token", "image_patch_token"]:
+        tok_str = tok.special_tokens_map.get(key)
+        if tok_str is not None:
+            special_ids.add(tok.convert_tokens_to_ids(tok_str))
+
+    # Some tokenizers expose many patch tokens; if there is a contiguous block or a getter, add them here.
+    if hasattr(tok, "image_token_id") and tok.image_token_id is not None:
+        special_ids.add(tok.image_token_id)
+
     # Mask tokens for not being used in the loss computation
-    labels[labels == processor.tokenizer.pad_token_id] = -100
-    labels[labels == image_token_id] = -100
-    labels[labels == 262144] = -100
+    labels[labels == tok.pad_token_id] = -100
+    for sid in special_ids:
+        labels[labels == sid] = -100
 
     batch["labels"] = labels
     return batch
-
 
 #start SFTTrainer
 from trl import SFTTrainer

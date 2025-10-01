@@ -6,31 +6,6 @@ model_name = "general"
 print(f"{output_dir}output_{model_name}_{str(wanted_count)}ct.pkl")
 
 import lei_prompts
-
-# Convert dataset to OAI messages
-def format_data(sample):
-    try:
-        user_content = [{
-                            "type": "text",
-                            "text": lei_prompts.user_prompt(),
-                        }]
-        for im in sample["image"]:
-            user_content.append({"type": "image", "image": im.convert("RGB")})
-        return {
-            "messages": [
-                {
-                    "role": "system",
-                    "content": [{"type": "text", "text": lei_prompts.system_message()}],
-                },
-                {
-                    "role": "user",
-                    "content": user_content
-                }
-            ]
-        }
-    except Exception as e:
-        print(e,sample)
-        return None
     
 def generating_dataset(wanted_count=9999):
     #This is for generating training data dict, done in local jupyter notebook
@@ -46,8 +21,16 @@ def generating_dataset(wanted_count=9999):
     
     for keys in mock_report_json.keys():
         pdf_path = mock_data_dir+f"report_{keys}.pdf"
+        png_lst = []
         # You can adjust dpi if necessary.
         pages = convert_from_path(pdf_path, poppler_path="/.mounts/labs/courtotlab/private/linghao/lei_notebook/notebook/.pixi/envs/default/bin", dpi=150)
+        for count, page in enumerate(pages):
+            #convert to RGB first
+            page = page.convert("RGB")
+            # Save pages as images in the pdf
+            png_path = f'{mock_data_dir}png/out_report_{keys}_{count}.png'
+            page.save(png_path, 'PNG')
+            png_lst.append(png_path)
 
         expected_report = json.dumps(mock_report_json[keys], ensure_ascii=False)
 
@@ -58,7 +41,7 @@ def generating_dataset(wanted_count=9999):
                   "user_prompt": lei_prompts.user_prompt(),
                   "system_message": lei_prompts.system_message(),
                   "expected_report": expected_report,
-                  "image": pages,
+                  "image": png_lst,
                   "mock_uuids": keys
               }
             )
@@ -76,7 +59,7 @@ features = Features({
     "user_prompt": Value("string"),
     "system_message": Value("string"),
     "expected_report": Value("string"),
-    "image": Sequence(HFImage()),
+    "image": Sequence(HFImage(decode=True)),
     "mock_uuids": Value("string")
 })
 

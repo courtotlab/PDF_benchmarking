@@ -52,7 +52,7 @@ def format_data(sample):
                             "text": lei_prompts.user_prompt(),
                         }]
         for im in sample["image"]:
-            user_content.append({"type": "image", "image": im.convert("RGB")})
+            user_content.append({"type": "image", "image": im})
         return {
             "messages": [
                 {
@@ -77,7 +77,7 @@ features = Features({
     "user_prompt": Value("string"),
     "system_message": Value("string"),
     "expected_report": Value("string"),
-    "image": Sequence(HFImage()),
+    "image": Sequence(HFImage(decode=True)),
     "mock_uuids": Value("string")
 })
 
@@ -139,6 +139,7 @@ for i in range(len(dataset)):
        "response": response,
        "expected_report": dataset_back[i]["expected_report"]
         }
+    print(i)
 
 print(f"done running {model_name} with {wanted_count} cases")
 print(f"with {max_tokens} as max_tokens")
