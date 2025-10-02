@@ -3,7 +3,7 @@ output_dir = "/u/lsong/labspace/lei_notebook/data/"
 wanted_count = 1000
 model_name = "general"
 script_path = "/u/lsong/labspace/git_repo/PDF_benchmarking"
-hospital_template_path = "/u/lsong/labspace/git_repo/PDF_benchmarking/getJSON/hospitals/"
+template_path=f"{script_path}/getJSON/hospitals/"
 import sys
 sys.path.append(script_path)
 
@@ -16,7 +16,7 @@ def generating_dataset(wanted_count=9999):
     #import section
     import json
     from pdf2image import convert_from_path
-    from getJSON.compareJSON_linghao import filter_template, extract_hospital_from_template, template_to_string
+    from getJSON.compareJSON_linghao import extract_hospital_from_template
     import os
 
     with open(mock_data_dir+'mock_data.json', "r") as f:
@@ -52,9 +52,7 @@ def generating_dataset(wanted_count=9999):
 
         #filter the json to remove keys not included in the records
         expected_report = mock_report_json[keys]
-        expected_report, hospital = extract_hospital_from_template(expected_report)
-        filtered_report = filter_template(expected_report, hospital, template_path=hospital_template_path)    
-        filtered_report = template_to_string(filtered_report)
+        filtered_report, hospital = extract_hospital_from_template(expected_report, template_path=template_path)
 
         # Convert dataset to OAI messages
         # need to use list comprehension to keep Pil.Image type, .mape convert image to bytes
@@ -74,7 +72,7 @@ def generating_dataset(wanted_count=9999):
     return dataset
 
 #inport datasets types
-from datasets import Dataset, Features, Value, Sequence, Image as HFImage
+from datasets import Features, Value, Sequence, Image as HFImage
 
 #schema for dataset
 features = Features({

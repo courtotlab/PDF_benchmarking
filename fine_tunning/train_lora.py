@@ -82,15 +82,16 @@ from trl import SFTConfig
 args = SFTConfig(
     output_dir=model_id,                    # directory to save and repository id
     max_length=None,                        # max sequence length for model and packing of the dataset
-    packing=True,                          # Groups multiple samples in the dataset into a single sequence
+    packing=True,                           # Groups multiple samples in the dataset into a single sequence
     num_train_epochs=3,                     # number of training epochs
     per_device_train_batch_size=2,          # batch size per device during training
     per_device_eval_batch_size=2,           # batch size for evaluation
-    gradient_accumulation_steps=4,          # number of steps before performing a backward/update pass
+    gradient_accumulation_steps=8,          # number of steps before performing a backward/update pass
     gradient_checkpointing=True,            # use gradient checkpointing to save memory
-    optim="adamw_torch_fused",                    # used to use fused adamw optimizer
+    optim="adamw_torch_fused",              # used to use fused adamw optimizer
     logging_steps=10,                       # log every 10 steps
-    save_strategy="epoch",                  # save checkpoint every epoch
+    save_strategy="steps",                  # save checkpoint every epoch
+    save_steps = 100,                       # save checkpoint every 100 steps if save_strategy is "steps"
     learning_rate=1e-4,                     # learning rate, based on QLoRA paper
     fp16=True if bnb_4bit_compute_dtype == torch.float16 else False,   # use float16 precision
     bf16=True if bnb_4bit_compute_dtype == torch.bfloat16 else False,   # use bfloat16 precision

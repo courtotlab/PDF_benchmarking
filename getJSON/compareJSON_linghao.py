@@ -766,7 +766,7 @@ def analyze_fp_fn_by_field(differences, hospital, model_name, template_data, ext
     return pd.DataFrame([row_data])
 
 
-def extract_hospital_from_template(expected_report):
+def extract_hospital_from_template(expected_report, template_path="hospitals/"):
     """
     Extract the hospital name from the template based on report_id.
     Filters the expected report to only include fields relevant to that hospital.
@@ -796,7 +796,7 @@ def extract_hospital_from_template(expected_report):
         raise KeyError("missing testing_laboratory key in json")
 
     #filter the expected results base on the hospital
-    expected_report = filter_template(expected_report, hospital)
+    expected_report = filter_template(expected_report, hospital, template_path=template_path)
 
     #turn all keys and values to lowercase for comparison
     expected_report = dict_to_lowercase(expected_report)

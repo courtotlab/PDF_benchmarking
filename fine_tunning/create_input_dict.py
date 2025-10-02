@@ -4,7 +4,8 @@ import sys
 sys.path.append(script_path)
 
 pkl_dir = "/u/lsong/labspace/lei_notebook/data/"
-hospital_template_path = "/u/lsong/labspace/git_repo/PDF_benchmarking/getJSON/hospitals/"
+template_path = f"{script_path}/getJSON/hospitals/"
+mock_data_dir = "/.mounts/labs/courtotlab/private/jweile/projects/lei_mockup_generator/out2/"
 wanted_count = 1000
 
 # Convert dataset to OAI messages
@@ -42,11 +43,8 @@ def generating_dataset(wanted_count=9999):
     #import section
     import json
     from pdf2image import convert_from_path
-    from getJSON.compareJSON_linghao import filter_template, extract_hospital_from_template, template_to_string
+    from getJSON.compareJSON_linghao import extract_hospital_from_template
     import os
-
-    #reading section
-    mock_data_dir = "/.mounts/labs/courtotlab/private/jweile/projects/lei_mockup_generator/out2/"
 
     with open(mock_data_dir+'mock_data.json') as f:
         mock_report_json = json.load(f)
@@ -57,7 +55,7 @@ def generating_dataset(wanted_count=9999):
     for keys in mock_report_json.keys():
         pdf_path = mock_data_dir+f"report_{keys}.pdf"
         png_lst = []
-        convert = False
+        convert = True
         if convert == True:
             # You can adjust dpi if necessary.
             pages = convert_from_path(pdf_path, poppler_path="/.mounts/labs/courtotlab/private/linghao/lei_notebook/notebook/.pixi/envs/default/bin", dpi=150, fmt='png')
@@ -82,9 +80,7 @@ def generating_dataset(wanted_count=9999):
 
         #filter the json to remove keys not included in the records
         expected_report = mock_report_json[keys]
-        expected_report, hospital = extract_hospital_from_template(expected_report)
-        filtered_report = filter_template(expected_report, hospital, template_path=hospital_template_path) 
-        filtered_report = template_to_string(filtered_report)
+        filtered_report, hospital = extract_hospital_from_template(expected_report, template_path=template_path)
 
         # Convert dataset to OAI messages
         # need to use list comprehension to keep Pil.Image type, .mape convert image to bytes
