@@ -1,6 +1,10 @@
 #/u/jweile/labspace/projects/lei_mockup_generator/out2 # training data and answers
+script_path = "/u/lsong/labspace/git_repo/PDF_benchmarking"
+import sys
+sys.path.append(script_path)
 
 pkl_dir = "/u/lsong/labspace/lei_notebook/data/"
+hospital_template_path = "/u/lsong/labspace/git_repo/PDF_benchmarking/getJSON/hospitals/"
 wanted_count = 1000
 
 # Convert dataset to OAI messages
@@ -39,6 +43,7 @@ def generating_dataset(wanted_count=9999):
     import json
     from pdf2image import convert_from_path
     from getJSON.compareJSON_linghao import filter_template, extract_hospital_from_template, template_to_string
+    import os
 
     #reading section
     mock_data_dir = "/.mounts/labs/courtotlab/private/jweile/projects/lei_mockup_generator/out2/"
@@ -52,21 +57,33 @@ def generating_dataset(wanted_count=9999):
     for keys in mock_report_json.keys():
         pdf_path = mock_data_dir+f"report_{keys}.pdf"
         png_lst = []
-        # You can adjust dpi if necessary.
-        pages = convert_from_path(pdf_path, poppler_path="/.mounts/labs/courtotlab/private/linghao/lei_notebook/notebook/.pixi/envs/default/bin", dpi=150, fmt='png')
-        
-        for count, page in enumerate(pages):
-            #convert to RGB first
-            page = page.convert("RGB")
-            # Save pages as images in the pdf
-            png_path = f'{mock_data_dir}png/out_report_{keys}_{count}.png'
-            page.save(png_path, 'PNG')
-            png_lst.append(png_path)
+        convert = False
+        if convert == True:
+            # You can adjust dpi if necessary.
+            pages = convert_from_path(pdf_path, poppler_path="/.mounts/labs/courtotlab/private/linghao/lei_notebook/notebook/.pixi/envs/default/bin", dpi=150, fmt='png')
+            
+            for count, page in enumerate(pages):
+                #convert to RGB first
+                page = page.convert("RGB")
+                # Save pages as images in the pdf
+                png_path = f'{mock_data_dir}png/out_report_{keys}_{count}.png'
+                page.save(png_path, 'PNG')
+                png_lst.append(png_path)
+        else:
+            # Use pre-converted images if available
+            count = 0
+            while True:
+                png_path = f'{mock_data_dir}png/out_report_{keys}_{count}.png'
+                if os.path.exists(png_path):
+                    png_lst.append(png_path)
+                    count += 1
+                else:
+                    break
 
         #filter the json to remove keys not included in the records
         expected_report = mock_report_json[keys]
         expected_report, hospital = extract_hospital_from_template(expected_report)
-        filtered_report = filter_template(expected_report, hospital)   
+        filtered_report = filter_template(expected_report, hospital, template_path=hospital_template_path) 
         filtered_report = template_to_string(filtered_report)
 
         # Convert dataset to OAI messages

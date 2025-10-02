@@ -6,7 +6,7 @@ import pandas as pd
 from collections import defaultdict
 import re
 
-def filter_template(template, reportName):
+def filter_template(template, reportName, template_path="hospitals/"):
     """
     Return a copy of `template` with only those entries whose key
     appears in reportName.txt (nested dicts/lists pruned similarly).
@@ -14,7 +14,7 @@ def filter_template(template, reportName):
     if reportName == "fakehospital2":
         return template
     # Apply filtering to both hospitals based on their respective content files
-    report_file = f"hospitals/{reportName}.txt"
+    report_file = f"{template_path}{reportName}.txt"
     
     # Check if the report file exists
     if not os.path.exists(report_file):
