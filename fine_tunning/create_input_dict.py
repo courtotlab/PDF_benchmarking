@@ -1,6 +1,16 @@
 #/u/jweile/labspace/projects/lei_mockup_generator/out2 # training data and answers
-script_path = "/u/lsong/labspace/git_repo/PDF_benchmarking"
+#import section
+import json
+from pdf2image import convert_from_path
+from getJSON.compareJSON_linghao import extract_hospital_from_template
+import lei_prompts
+import os
+from datasets import Dataset, Features, Value, Sequence, Image as HFImage
+import pickle
 import sys
+
+script_path = "/u/lsong/labspace/git_repo/PDF_benchmarking"
+#enable the scirpt to access local modules
 sys.path.append(script_path)
 
 pkl_dir = "/u/lsong/labspace/lei_notebook/data/"
@@ -10,7 +20,6 @@ wanted_count = 1000
 
 # Convert dataset to OAI messages
 def format_data(sample):
-    import lei_prompts
     try:
         user_content = [{
                             "type": "text",
@@ -40,11 +49,6 @@ def format_data(sample):
 
 def generating_dataset(wanted_count=9999):
     #This is for generating training data dict, done in local jupyter notebook
-    #import section
-    import json
-    from pdf2image import convert_from_path
-    from getJSON.compareJSON_linghao import extract_hospital_from_template
-    import os
 
     with open(mock_data_dir+'mock_data.json') as f:
         mock_report_json = json.load(f)
@@ -96,8 +100,6 @@ def generating_dataset(wanted_count=9999):
     print(f"Generated {len(dataset)} samples.")
     return dataset
 
-from datasets import Dataset, Features, Value, Sequence, Image as HFImage
-
 features = Features({
     "expected_report": Value("string"),
     "image": Sequence(HFImage(decode=True))
@@ -108,8 +110,6 @@ dataset = generating_dataset(wanted_count=wanted_count)
 dataset = Dataset.from_list(dataset, features=features)
 
 dataset = [format_data(sample) for sample in dataset]  
-
-import pickle
 
 #write generated data to pkl file
 with open(f'{pkl_dir}mock_data_train_input_{wanted_count}ct.pkl', 'wb') as f:

@@ -5,17 +5,26 @@
 #1. training batch is much larger than validation batch, so training loss is training_batch * training_loss, validation loss is validation_batch * validation_loss
 #2. checkout the dropout rate in the validation. The dropout rate is 0.05, so 5% of the model is not used in training, but all the model is used in validation, so the validation loss is lower than training loss
 
-#loading training data
-pkl_dir = "/u/lsong/labspace/lei_notebook/data/"
-
-# Hugging Face model id
-model_id = "/.mounts/labs/courtotlab/scratch/gemma-3-27b-it/" # or `google/gemma-3-12b-pt`, `google/gemma-3-27-pt`, google/gemma-3-4b-pt, gemma-3n-E2B-it-finetuned/ 
-print(model_id)
-
-wanted_count = 1000
-
 import pickle
 import random
+import torch
+from transformers import AutoProcessor, AutoModelForImageTextToText, BitsAndBytesConfig
+from peft import LoraConfig
+from trl import SFTConfig
+from PIL import Image
+from trl import SFTTrainer
+import time
+import json
+
+#loading training data
+pkl_dir = "/u/lsong/labspace/lei_notebook/data/"
+# Hugging Face model id
+model_name = "gemma-3-27b-it" # or `google/gemma-3-12b-pt`, `google/gemma-3-27-pt`, google/gemma-3-4b-pt, gemma-3n-E2B-it-finetuned/ 
+model_path = f"/.mounts/labs/courtotlab/scratch/{model_name}/" 
+lora_output_dir = "/.mounts/labs/courtotlab/scratch/lora/"
+print(model_path)
+
+wanted_count = 1000
 
 with open(f"{pkl_dir}mock_data_train_input_{wanted_count}ct.pkl", "rb") as f:
     dataset = pickle.load(f)
@@ -28,7 +37,6 @@ test_dataset = dataset[int((0.1*len(dataset))):]
 print("train dataset length: ", len(train_dataset))
 print("test dataset length: ", len(test_dataset))
 
-import torch
 # Check if GPU benefits from bfloat16
 print(torch.cuda.get_device_capability())
 if torch.cuda.get_device_capability()[0] < 8:
@@ -38,8 +46,6 @@ if torch.cuda.get_device_capability()[0] < 8:
 else:
     bnb_4bit_compute_dtype = torch.bfloat16 #bfloat16 is only supported on Ampere or newer GPU
     attn_impl = "eager"
-
-from transformers import AutoProcessor, AutoModelForImageTextToText, BitsAndBytesConfig
 
 # Define model init arguments
 model_kwargs = dict(
@@ -58,10 +64,8 @@ model_kwargs["quantization_config"] = BitsAndBytesConfig(
 )
 
 # Load model and tokenizer
-model = AutoModelForImageTextToText.from_pretrained(model_id, **model_kwargs, local_files_only=True)
-processor = AutoProcessor.from_pretrained(model_id, local_files_only=True)
-
-from peft import LoraConfig
+model = AutoModelForImageTextToText.from_pretrained(model_path, **model_kwargs, local_files_only=True)
+processor = AutoProcessor.from_pretrained(model_path, local_files_only=True)
 
 peft_config = LoraConfig(
     lora_alpha=64,
@@ -77,10 +81,9 @@ peft_config = LoraConfig(
 )
 
 #define special hyperparameters
-from trl import SFTConfig
 
 args = SFTConfig(
-    output_dir=model_id,                    # directory to save and repository id
+    output_dir=lora_output_dir,             # directory to save and repository id
     max_length=None,                        # max sequence length for model and packing of the dataset
     packing=True,                           # Groups multiple samples in the dataset into a single sequence
     num_train_epochs=3,                     # number of training epochs
@@ -110,8 +113,6 @@ args = SFTConfig(
 )
 
 args.remove_unused_columns = False # important for collator
-
-from PIL import Image
 
 def process_vision_info(messages: list[dict]) -> list[Image.Image]:
     image_inputs = []
@@ -174,7 +175,6 @@ def collate_fn(examples):
     return batch
 
 #start SFTTrainer
-from trl import SFTTrainer
 
 # Create Trainer object
 trainer = SFTTrainer(
@@ -188,19 +188,17 @@ trainer = SFTTrainer(
 )
 
 # Import the time library
-import time
 start = time.time() 
 
 # Start training, the model will be automatically saved to the Hub and the output directory
 trainer.train()
 
 # Save the final model
-trainer.save_model(f"{args.output_dir}{wanted_count}ct1")
+trainer.save_model(f"{lora_output_dir}{model_name}{wanted_count}ct_lora")
 
 log_history = trainer.state.log_history
 
-import json
-with open(f"{args.output_dir}/training.log", "w") as f:
+with open(f"{lora_output_dir}/training.log", "w") as f:
     for rec in log_history:
         f.write(json.dumps(rec) + "\n")
 

@@ -1,23 +1,29 @@
+#import section
+import json
+from pdf2image import convert_from_path
+from getJSON.compareJSON_linghao import extract_hospital_from_template
+import os
+import lei_prompts
+#import datasets types
+from datasets import Features, Value, Sequence, Image as HFImage
+import sys
+import pickle
+
+
 mock_data_dir = "/.mounts/labs/courtotlab/private/jweile/projects/lei_mockup_generator/out3/"
 output_dir = "/u/lsong/labspace/lei_notebook/data/"
 wanted_count = 1000
 model_name = "general"
 script_path = "/u/lsong/labspace/git_repo/PDF_benchmarking"
 template_path=f"{script_path}/getJSON/hospitals/"
-import sys
+
+#enable the scirpt to access local modules
 sys.path.append(script_path)
 
 print(f"{output_dir}output_{model_name}_{str(wanted_count)}ct.pkl")
-
-import lei_prompts
     
 def generating_dataset(wanted_count=9999):
     #This is for generating training data dict, done in local jupyter notebook
-    #import section
-    import json
-    from pdf2image import convert_from_path
-    from getJSON.compareJSON_linghao import extract_hospital_from_template
-    import os
 
     with open(mock_data_dir+'mock_data.json', "r") as f:
         mock_report_json = json.load(f)
@@ -71,9 +77,6 @@ def generating_dataset(wanted_count=9999):
     print(f"Generated {len(dataset)} samples.")
     return dataset
 
-#inport datasets types
-from datasets import Features, Value, Sequence, Image as HFImage
-
 #schema for dataset
 features = Features({
     "user_prompt": Value("string"),
@@ -85,8 +88,6 @@ features = Features({
 
 #generate dataset
 dataset = generating_dataset(wanted_count=wanted_count)
-
-import pickle
 
 with open(f"{output_dir}output_{model_name}_{str(wanted_count)}ct.pkl", "wb") as f:
     pickle.dump(dataset, f)

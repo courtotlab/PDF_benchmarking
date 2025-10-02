@@ -5,7 +5,7 @@ wanted_count = 1000
 
 model_name = "gemma-3-27b-it" #gemma-3n-E2B-it-finetuned #gemma-3-27b-it
 GEMMA_PATH = f"/.mounts/labs/courtotlab/scratch/{model_name}/" #@param ["google/gemma-3n-E2B-it", "google/gemma-3n-E4B-it"]
-LORA_PATH = f"/.mounts/labs/courtotlab/scratch/{model_name}/1000ct1/"
+LORA_PATH = f"/.mounts/labs/courtotlab/scratch/lora/gemma-3-27b-it_1000ct1_lora/"
 output_dir = "/u/lsong/labspace/lei_notebook/data/"
 pickle_dir = "/u/lsong/labspace/lei_notebook/data/output_general_1000ct.pkl"
 max_tokens = 5000
