@@ -22,8 +22,8 @@ with open(f"{pkl_dir}mock_data_train_input_{wanted_count}ct.pkl", "rb") as f:
 
 random.shuffle(dataset)
 
-train_dataset = dataset[:int((0.5*len(dataset)))]
-test_dataset = dataset[int((0.5*len(dataset))):]
+train_dataset = dataset[:int((0.9*len(dataset)))]
+test_dataset = dataset[int((0.1*len(dataset))):]
 
 print("train dataset length: ", len(train_dataset))
 print("test dataset length: ", len(test_dataset))
@@ -81,8 +81,8 @@ from trl import SFTConfig
 
 args = SFTConfig(
     output_dir=model_id,                    # directory to save and repository id
-    max_length=1024,                        # max sequence length for model and packing of the dataset
-    packing=False,                          # Groups multiple samples in the dataset into a single sequence
+    max_length=None,                        # max sequence length for model and packing of the dataset
+    packing=True,                          # Groups multiple samples in the dataset into a single sequence
     num_train_epochs=3,                     # number of training epochs
     per_device_train_batch_size=2,          # batch size per device during training
     per_device_eval_batch_size=2,           # batch size for evaluation

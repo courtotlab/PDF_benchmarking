@@ -63,7 +63,7 @@ def user_prompt():
                 "refseq_mrna": "NM_xxxxxxx.x"
             }
             },
-            "num_tested_genes": "",
+            "num_tested_genes": "1",
             "sample_type": "",
             "analysis_type": "",
             "variants": [

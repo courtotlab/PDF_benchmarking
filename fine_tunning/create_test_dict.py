@@ -12,6 +12,7 @@ def generating_dataset(wanted_count=9999):
     #import section
     import json
     from pdf2image import convert_from_path
+    from getJSON.compareJSON_linghao import filter_template, extract_hospital_from_template, template_to_string
 
     with open(mock_data_dir+'mock_data.json', "r") as f:
         mock_report_json = json.load(f)
@@ -32,7 +33,11 @@ def generating_dataset(wanted_count=9999):
             page.save(png_path, 'PNG')
             png_lst.append(png_path)
 
-        expected_report = json.dumps(mock_report_json[keys], ensure_ascii=False)
+        #filter the json to remove keys not included in the records
+        expected_report = mock_report_json[keys]
+        expected_report, hospital = extract_hospital_from_template(expected_report)
+        filtered_report = filter_template(expected_report, hospital)   
+        filtered_report = template_to_string(filtered_report)
 
         # Convert dataset to OAI messages
         # need to use list comprehension to keep Pil.Image type, .mape convert image to bytes
@@ -40,7 +45,7 @@ def generating_dataset(wanted_count=9999):
               {
                   "user_prompt": lei_prompts.user_prompt(),
                   "system_message": lei_prompts.system_message(),
-                  "expected_report": expected_report,
+                  "expected_report": filtered_report,
                   "image": png_lst,
                   "mock_uuids": keys
               }
