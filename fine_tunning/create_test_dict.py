@@ -1,24 +1,25 @@
 #import section
+import sys
+#enable the scirpt to access local modules
+script_path = "/u/lsong/labspace/git_repo/PDF_benchmarking" #current project path in order to import local modules
+sys.path.append(script_path)
+
 import json
 from pdf2image import convert_from_path
 from getJSON.compareJSON_linghao import extract_hospital_from_template
-import os
 import lei_prompts
 #import datasets types
 from datasets import Features, Value, Sequence, Image as HFImage
-import sys
+import os
 import pickle
 
 
-mock_data_dir = "/.mounts/labs/courtotlab/private/jweile/projects/lei_mockup_generator/out3/"
-output_dir = "/u/lsong/labspace/lei_notebook/data/"
-wanted_count = 1000
-model_name = "general"
-script_path = "/u/lsong/labspace/git_repo/PDF_benchmarking"
-template_path=f"{script_path}/getJSON/hospitals/"
+mock_data_dir = "/.mounts/labs/courtotlab/private/jweile/projects/lei_mockup_generator/out3/" #directory including mockup pdfs and jsons
+output_dir = "/u/lsong/labspace/lei_notebook/data/" #directory to save the output pickle file   
+wanted_count = 1000     #number of samples to convert
+model_name = "general"  #name of the model. because this is generating test dataset for all model uses, so it is "general"
+template_path=f"{script_path}/getJSON/hospitals/" #path to the hospital keys templates
 
-#enable the scirpt to access local modules
-sys.path.append(script_path)
 
 print(f"{output_dir}output_{model_name}_{str(wanted_count)}ct.pkl")
     

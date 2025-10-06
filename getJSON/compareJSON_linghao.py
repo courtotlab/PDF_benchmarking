@@ -824,7 +824,7 @@ def linghao_code(data_dir, mock_data_test_output):
         # Prepare template for this hospital
         expected_report = template_to_string(expected_report)
 
-        model_name = "Gemma3-2B"
+        model_name = "Gemma3-27B"
         prompt = "Normal"
         from run_models.jsonLLM import extract_json_from_response
 
@@ -866,6 +866,6 @@ def linghao_code(data_dir, mock_data_test_output):
         ovr.to_csv(f, index=False)
 
 if __name__ == "__main__":
-    data_dir = "/u/lsong/labspace/lei_notebook/data/"
-    mock_data_test_output = "output_gemma-3-27b-it_1000ct.pkl"
+    data_dir = "/u/lsong/labspace/lei_notebook/data/" # directory containing the predicted responses and expected reports
+    mock_data_test_output = "output_gemma-3-27b-it_1000ct.pkl" # name of the pickle file containing the predicted responses and expected reports
     linghao_code(data_dir, mock_data_test_output)

@@ -16,15 +16,16 @@ from trl import SFTTrainer
 import time
 import json
 
+wanted_count = 1000   #number of samples to use for training LoRA
 #loading training data
-pkl_dir = "/u/lsong/labspace/lei_notebook/data/"
+pkl_dir = "/u/lsong/labspace/lei_notebook/data/" #directory to load input pkl files
 # Hugging Face model id
-model_name = "gemma-3-27b-it" # or `google/gemma-3-12b-pt`, `google/gemma-3-27-pt`, google/gemma-3-4b-pt, gemma-3n-E2B-it-finetuned/ 
-model_path = f"/.mounts/labs/courtotlab/scratch/{model_name}/" 
-lora_output_dir = "/.mounts/labs/courtotlab/scratch/lora/"
+model_name = "gemma-3-27b-it" # select from google/gemma-3-27-it, gemma-3n-E2B-it-finetuned
+model_path = f"/.mounts/labs/courtotlab/scratch/{model_name}/" #directory to load base model, the model should be downloaded from Hugging Face by hf cli first
+lora_output_dir = "/.mounts/labs/courtotlab/scratch/lora/" #directory to save LoRA adapter model
+lora_name = f"{lora_output_dir}{model_name}{wanted_count}ct_lora" #name of the LoRA adapter model
 print(model_path)
 
-wanted_count = 1000
 
 with open(f"{pkl_dir}mock_data_train_input_{wanted_count}ct.pkl", "rb") as f:
     dataset = pickle.load(f)
@@ -32,7 +33,7 @@ with open(f"{pkl_dir}mock_data_train_input_{wanted_count}ct.pkl", "rb") as f:
 random.shuffle(dataset)
 
 train_dataset = dataset[:int((0.9*len(dataset)))]
-test_dataset = dataset[int((0.1*len(dataset))):]
+test_dataset = dataset[int((0.9*len(dataset))):]
 
 print("train dataset length: ", len(train_dataset))
 print("test dataset length: ", len(test_dataset))
@@ -85,7 +86,7 @@ peft_config = LoraConfig(
 args = SFTConfig(
     output_dir=lora_output_dir,             # directory to save and repository id
     max_length=None,                        # max sequence length for model and packing of the dataset
-    packing=True,                           # Groups multiple samples in the dataset into a single sequence
+    packing=False,                           # Groups multiple samples in the dataset into a single sequence
     num_train_epochs=3,                     # number of training epochs
     per_device_train_batch_size=2,          # batch size per device during training
     per_device_eval_batch_size=2,           # batch size for evaluation
@@ -194,7 +195,7 @@ start = time.time()
 trainer.train()
 
 # Save the final model
-trainer.save_model(f"{lora_output_dir}{model_name}{wanted_count}ct_lora")
+trainer.save_model(lora_name)
 
 log_history = trainer.state.log_history
 

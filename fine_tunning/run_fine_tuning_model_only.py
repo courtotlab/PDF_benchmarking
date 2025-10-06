@@ -1,14 +1,14 @@
 import os
 os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
 
-wanted_count = 1000
+wanted_count = 200   #number of samples to run through the model, can be adjusted based on available memory
 
-model_name = "gemma-3-27b-it" #gemma-3n-E2B-it-finetuned #gemma-3-27b-it
+model_name = "gemma-3-27b-it" #choose from gemma-3n-E2B-it-finetuned, gemma-3-27b-it
 GEMMA_PATH = f"/.mounts/labs/courtotlab/scratch/{model_name}/" #@param ["google/gemma-3n-E2B-it", "google/gemma-3n-E4B-it"]
-LORA_PATH = f"/.mounts/labs/courtotlab/scratch/lora/gemma-3-27b-it_1000ct1_lora/"
-output_dir = "/u/lsong/labspace/lei_notebook/data/"
-pickle_dir = "/u/lsong/labspace/lei_notebook/data/output_general_1000ct.pkl"
-max_tokens = 5000
+LORA_PATH = "/.mounts/labs/courtotlab/scratch/lora/gemma-3-27b-it1000ct_lora/"  #location of the LoRA adapter model
+output_dir = "/u/lsong/labspace/lei_notebook/data/" #directory to save the output pickle file
+pickle_dir = "/u/lsong/labspace/lei_notebook/data/output_general_1000ct.pkl"    #location of the test dataset pickle file
+max_tokens = 5000   #max tokens to generate, can be adjusted based on the length of the expected reports, if seeing truncated results, increase this number
 
 print(f"{output_dir}output_{model_name}_{str(wanted_count)}ct.pkl")
 
@@ -17,8 +17,8 @@ import lei_prompts
 from peft import LoraConfig
 
 peft_config = LoraConfig(
-    lora_alpha=16,
-    lora_dropout=0.05,
+    lora_alpha=64,
+    lora_dropout=0,
     r=16,
     bias="none",
     target_modules="all-linear",
@@ -82,6 +82,7 @@ features = Features({
 })
 
 #generate dataset
+print("start loading dataset")
 import pickle
 with open(pickle_dir, "rb") as f:
     dataset = pickle.load(f)
@@ -124,6 +125,7 @@ class ChatState():
     
     return text[0]
 
+print("start running model")
 chat = ChatState(model, processor)
 
 #loop through dataset and get responses
@@ -145,5 +147,5 @@ print(f"done running {model_name} with {wanted_count} cases")
 print(f"with {max_tokens} as max_tokens")
 
 import pickle
-with open(f"{output_dir}output_{model_name}_{str(wanted_count)}ct1.pkl", "wb") as f:
+with open(f"{output_dir}output_{model_name}_{str(wanted_count)}ct.pkl", "wb") as f:
     pickle.dump(output_dict, f)

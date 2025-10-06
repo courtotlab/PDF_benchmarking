@@ -1,4 +1,10 @@
 #/u/jweile/labspace/projects/lei_mockup_generator/out2 # training data and answers
+
+import sys
+script_path = "/u/lsong/labspace/git_repo/PDF_benchmarking" #current project path in order to import local modules
+#enable the scirpt to access local modules
+sys.path.append(script_path)
+
 #import section
 import json
 from pdf2image import convert_from_path
@@ -7,16 +13,11 @@ import lei_prompts
 import os
 from datasets import Dataset, Features, Value, Sequence, Image as HFImage
 import pickle
-import sys
 
-script_path = "/u/lsong/labspace/git_repo/PDF_benchmarking"
-#enable the scirpt to access local modules
-sys.path.append(script_path)
-
-pkl_dir = "/u/lsong/labspace/lei_notebook/data/"
-template_path = f"{script_path}/getJSON/hospitals/"
-mock_data_dir = "/.mounts/labs/courtotlab/private/jweile/projects/lei_mockup_generator/out2/"
-wanted_count = 1000
+wanted_count = 1000 #number of samples to generate
+pkl_dir = "/u/lsong/labspace/lei_notebook/data/" #directory to save output pkl files
+template_path = f"{script_path}/getJSON/hospitals/" #directory to hospital templates
+mock_data_dir = "/.mounts/labs/courtotlab/private/jweile/projects/lei_mockup_generator/out2/"  #directory to input pdfs and output pngs
 
 # Convert dataset to OAI messages
 def format_data(sample):
@@ -50,17 +51,18 @@ def format_data(sample):
 def generating_dataset(wanted_count=9999):
     #This is for generating training data dict, done in local jupyter notebook
 
-    with open(mock_data_dir+'mock_data.json') as f:
+    with open(mock_data_dir+'mock_data.json', 'r') as f:
         mock_report_json = json.load(f)
 
+    print("starting generating dataset")
     #convert pdf to image
     dataset = []
-    
     for keys in mock_report_json.keys():
         pdf_path = mock_data_dir+f"report_{keys}.pdf"
         png_lst = []
         convert = True
         if convert == True:
+            print(f"converting {keys}")
             # You can adjust dpi if necessary.
             pages = convert_from_path(pdf_path, poppler_path="/.mounts/labs/courtotlab/private/linghao/lei_notebook/notebook/.pixi/envs/default/bin", dpi=150, fmt='png')
             
