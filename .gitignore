@@ -45,3 +45,4 @@ generate_reports.sh
 getJSON/run_models/hpc_connect.ipynb
 /graphs/graphs.py  
 /graphs/genGraphs.py
+fine_tunning/__pycache__/
