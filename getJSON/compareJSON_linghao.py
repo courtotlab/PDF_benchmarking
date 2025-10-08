@@ -867,5 +867,5 @@ def linghao_code(data_dir, mock_data_test_output):
 
 if __name__ == "__main__":
     data_dir = "/u/lsong/labspace/lei_notebook/data/" # directory containing the predicted responses and expected reports
-    mock_data_test_output = "output_gemma-3-27b-it_1000ct.pkl" # name of the pickle file containing the predicted responses and expected reports
+    mock_data_test_output = "output_gemma-3-27b-it_200ct.pkl" # name of the pickle file containing the predicted responses and expected reports
     linghao_code(data_dir, mock_data_test_output)

@@ -7,14 +7,22 @@ model_name = "gemma-3-27b-it" #choose from gemma-3n-E2B-it-finetuned, gemma-3-27
 GEMMA_PATH = f"/.mounts/labs/courtotlab/scratch/{model_name}/" #@param ["google/gemma-3n-E2B-it", "google/gemma-3n-E4B-it"]
 LORA_PATH = "/.mounts/labs/courtotlab/scratch/lora/gemma-3-27b-it1000ct_lora/"  #location of the LoRA adapter model
 output_dir = "/u/lsong/labspace/lei_notebook/data/" #directory to save the output pickle file
-pickle_dir = "/u/lsong/labspace/lei_notebook/data/output_general_1000ct.pkl"    #location of the test dataset pickle file
+pickle_dir = f"/u/lsong/labspace/lei_notebook/data/output_general_{wanted_count}ct.pkl"    #location of the test dataset pickle file
 max_tokens = 5000   #max tokens to generate, can be adjusted based on the length of the expected reports, if seeing truncated results, increase this number
 
 print(f"{output_dir}output_{model_name}_{str(wanted_count)}ct.pkl")
 
 import lei_prompts
 
-from peft import LoraConfig
+from peft import LoraConfig, PeftModel
+import torch
+# load base model
+from transformers import AutoModelForImageTextToText, AutoProcessor, BitsAndBytesConfig
+#inport datasets types
+from datasets import Dataset, Features, Value, Sequence, Image as HFImage
+import copy
+import pickle
+from time import time
 
 peft_config = LoraConfig(
     lora_alpha=64,
@@ -29,15 +37,46 @@ peft_config = LoraConfig(
     ],
 )
 
-# load base model
-from transformers import AutoModelForImageTextToText, AutoProcessor
+# Check if GPU benefits from bfloat16
+print(torch.cuda.get_device_capability())
+if torch.cuda.get_device_capability()[0] < 8:
+    bnb_4bit_compute_dtype = torch.float16
+    attn_impl = "eager"
+    #    raise ValueError("GPU does not support bfloat16, please use a GPU that supports bfloat16.")
+else:
+    bnb_4bit_compute_dtype = torch.bfloat16 #bfloat16 is only supported on Ampere or newer GPU
+    attn_impl = "eager"
 
-processor = AutoProcessor.from_pretrained(GEMMA_PATH, local_files_only=True)
+# Define model init arguments
+model_kwargs = dict(
+    attn_implementation=attn_impl, # Use "flash_attention_2" when running on Ampere or newer GPU
+    torch_dtype=bnb_4bit_compute_dtype,
+    device_map="auto", # Let torch decide how to load the model
+)
 
-model = AutoModelForImageTextToText.from_pretrained(GEMMA_PATH, torch_dtype="auto", device_map="auto", local_files_only=True)
+# BitsAndBytesConfig int-4 config
+model_kwargs["quantization_config"] = BitsAndBytesConfig(
+    load_in_4bit=True,
+    bnb_4bit_use_double_quant=True,
+    bnb_4bit_quant_type="nf4",
+    bnb_4bit_compute_dtype=model_kwargs["torch_dtype"],
+    bnb_4bit_quant_storage=model_kwargs["torch_dtype"],
+)
 
-#load LoRA adapter
-model.load_adapter(LORA_PATH, adapter_name="adapter_model", peft_config=peft_config)
+model = AutoModelForImageTextToText.from_pretrained(GEMMA_PATH, **model_kwargs, local_files_only=True)
+print("Model loaded", flush=True)
+
+processor = AutoProcessor.from_pretrained(GEMMA_PATH, local_files_only=True, use_fast=True)
+
+print("start loading LoRA adapter", flush=True)
+model = PeftModel.from_pretrained(
+    model,
+    LORA_PATH,
+    adapter_name="adapter_model",
+    is_trainable=False,              # set True only if you intend to train
+    local_files_only=True,
+)
+print("done loading LoRA adapter", flush=True)
 
 print(f"Device: {model.device}")
 print(f"DType: {model.dtype}")
@@ -69,8 +108,6 @@ def format_data(sample):
         print(e,sample)
         return None
 
-#inport datasets types
-from datasets import Dataset, Features, Value, Sequence, Image as HFImage
 
 #schema for dataset
 features = Features({
@@ -83,11 +120,10 @@ features = Features({
 
 #generate dataset
 print("start loading dataset")
-import pickle
+
 with open(pickle_dir, "rb") as f:
     dataset = pickle.load(f)
 
-import copy
 dataset_back = copy.deepcopy(dataset)
 
 dataset = Dataset.from_list(dataset, features=features)
@@ -125,7 +161,7 @@ class ChatState():
     
     return text[0]
 
-print("start running model")
+print("start running model", flush=True)
 chat = ChatState(model, processor)
 
 #loop through dataset and get responses
@@ -133,7 +169,8 @@ output_dict = {}
 for i in range(len(dataset)):
     
     key = dataset_back[i]["mock_uuids"]
-     
+    print(f"Processing {i}th case with key {key}", flush=True)
+
     #initialize chat state  
     response = chat.send_message(dataset[i]["messages"], max_tokens=max_tokens)
     
@@ -143,9 +180,8 @@ for i in range(len(dataset)):
         }
     print(i)
 
-print(f"done running {model_name} with {wanted_count} cases")
-print(f"with {max_tokens} as max_tokens")
+print(f"done running {model_name} with {wanted_count} cases", flush=True)
+print(f"with {max_tokens} as max_tokens", flush=True)
 
-import pickle
 with open(f"{output_dir}output_{model_name}_{str(wanted_count)}ct.pkl", "wb") as f:
     pickle.dump(output_dict, f)

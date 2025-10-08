@@ -16,7 +16,7 @@ import pickle
 
 mock_data_dir = "/.mounts/labs/courtotlab/private/jweile/projects/lei_mockup_generator/out3/" #directory including mockup pdfs and jsons
 output_dir = "/u/lsong/labspace/lei_notebook/data/" #directory to save the output pickle file   
-wanted_count = 1000     #number of samples to convert
+wanted_count = 200     #number of samples to convert
 model_name = "general"  #name of the model. because this is generating test dataset for all model uses, so it is "general"
 template_path=f"{script_path}/getJSON/hospitals/" #path to the hospital keys templates
 
