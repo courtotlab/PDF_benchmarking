@@ -170,12 +170,12 @@ def main(): #if I ran this on an Ollama server would that
     for model in models:
         ensure_model_exists(model)   
     print(f"Found {len(models)} models to process.")
-    process_text_files_with_models(
+    '''process_text_files_with_models(
             prompt_path="/Users/ayu/PDF_benchmarking/getJSON/run_models/NERprompt.txt",
             models=models, 
             output_dir="OllamaOut",
             llm_function=textToLLM
-    )
+    )'''
     
 #stop when at 210 files
     process_text_files_with_models(

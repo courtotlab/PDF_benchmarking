@@ -17,7 +17,7 @@ library(dplyr)
 library(tidyr)
 
 # Read the CSV file with full path
-df <- read.csv("/Users/ayu/PDF_benchmarking/graphs/Hospital2.csv")
+df <- read.csv("/Users/ayu/PDF_benchmarking/graphs/Hospitalfinal.csv")
 
 # Create Input column based on LLM column
 df$Input <- ifelse(grepl("image", df$LLM, ignore.case = TRUE), "Image", "Text")
@@ -274,38 +274,25 @@ pval4 <- if (length(group7_comparison) > 0 && length(group8_comparison) > 0) {
     NA
 }
 
-# P-value 5: Kruskal-Wallis test for Llama vs Mistral conditions (non-parametric alternative to ANOVA)
-llama_zst <- raw_data_for_stats$F1score[
+# P-value 5: Compare Llama vs Mistral both zero-shot text
+group9_comparison <- raw_data_for_stats$F1score[
     raw_data_for_stats$llm_clean == "Llama3.1" &
     raw_data_for_stats$prompt_clean == "zero-shot" &
     raw_data_for_stats$input_clean == "text"
 ]
 
-mistral_zst <- raw_data_for_stats$F1score[
+group10_comparison <- raw_data_for_stats$F1score[
     raw_data_for_stats$llm_clean == "Mistral" &
     raw_data_for_stats$prompt_clean == "zero-shot" &
     raw_data_for_stats$input_clean == "text"
 ]
-mistral_zsi <- raw_data_for_stats$F1score[
-    raw_data_for_stats$llm_clean == "Mistral" &
-    raw_data_for_stats$prompt_clean == "zero-shot" &
-    raw_data_for_stats$input_clean == "image"
-]
 
-kruskal_df <- data.frame(
-    f1 = c(llama_zst, mistral_zst, mistral_zsi),
-    group = factor(c(
-        rep("Llama_ZST", length(llama_zst)),
-        rep("Mistral_ZST", length(mistral_zst)),
-        rep("Mistral_ZSI", length(mistral_zsi))
-    ))
-)
-
-pval5 <- NA
-if (nrow(kruskal_df) > 0 && nlevels(kruskal_df$group) > 1) {
-    kruskal_result <- kruskal.test(f1 ~ group, data = kruskal_df)
-    pval5 <- kruskal_result$p.value
+pval5 <- if (length(group9_comparison) > 0 && length(group10_comparison) > 0) {
+    wilcox.test(group9_comparison, group10_comparison, exact = FALSE)$p.value
+} else {
+    NA
 }
+
 
 # P-value 6: Compare GliNER vs BioGliNER on zero-shot text
 gliner_zst <- raw_data_for_stats$F1score[
@@ -414,9 +401,9 @@ mycolors <- c("firebrick2", "firebrick4", "steelblue2", "steelblue4")
 
 # Use tryCatch to ensure dev.off() is called even if errors occur
 tryCatch({
-    png("F1_scores_plot.png", width = 16, height = 8, units = "in", res = 1200)
+    png("F1_scores_plot.png", width = 10, height = 5, units = "in", res = 600)
     # Set margins and axis label orientations
-    op <- par(mar = c(8, 4, 4, 2), cex = 1.2)
+    op <- par(mar = c(2, 4, 4, 2), cex = 1.2)
 
     # Draw plot
     xs <- barplot(
@@ -429,7 +416,7 @@ tryCatch({
     )
 
     # Add custom rotated x-axis labels
-    x_coords <- colMeans(xs)
+    x_coords <- colMeans(xs) + 0.5
     # Adjust y position to be below the plot area
     y_pos <- par("usr")[3] - 2 
     text(x = x_coords, y = y_pos, labels = rownames(f1_mat), srt = 0, adj = 1, xpd = TRUE)
@@ -508,21 +495,21 @@ tryCatch({
         }
     }
 
+    #Pval 5 llama and mistral zero-shot text
+
     if (length(pvals) >= 5 && !is.na(pvals[5])) {
         llama_row <- which(mnames == "Llama3.1")
         mistral_row <- which(mnames == "Mistral")
         if (length(llama_row) > 0 && length(mistral_row) > 0) {
             x_llama_zst <- xs[1, llama_row]
             x_mistral_zst <- xs[1, mistral_row]
-            x_mistral_zsi <- xs[3, mistral_row]
             
             stars <- ifelse(pvals[5] < 0.001, "***", ifelse(pvals[5] < 0.01, "**", ifelse(pvals[5] < 0.05, "*", "ns")))
             
-            if (stars != "ns") {
-                y_pos <- 65
-                # Draw a line covering all three bars
-                segments(x_llama_zst, y_pos, x_mistral_zsi, y_pos)
-                text((x_llama_zst + x_mistral_zsi) / 2, y_pos + 2, stars, cex = 1.5)
+            if (stars != "n") {
+                y_pos <- 50
+                segments(x_llama_zst, y_pos, x_mistral_zst, y_pos)
+                text((x_llama_zst + x_mistral_zst) / 2, y_pos + 2, stars, cex = 1.5)
             }
         }
     }
@@ -538,7 +525,7 @@ tryCatch({
             stars <- ifelse(pvals[6] < 0.001, "***", ifelse(pvals[6] < 0.01, "**", ifelse(pvals[6] < 0.05, "*", "ns")))
             
             if (stars != "ns") {
-                y_pos <- 60
+                y_pos <- 65
                 segments(x_gliner_zst, y_pos-5, x_biogliner_zst, y_pos-5)
                 text((x_gliner_zst + x_biogliner_zst) / 2, y_pos - 3, stars, cex = 1.5)
             }
@@ -574,7 +561,7 @@ tryCatch({
             stars <- ifelse(pvals[8] < 0.001, "***", ifelse(pvals[8] < 0.01, "**", ifelse(pvals[8] < 0.05, "*", "ns")))
             
             if (stars != "ns") {
-                y_pos <- 50
+                y_pos <- 65
                 segments(x_gpt_zst, y_pos, x_llama_zst, y_pos)
                 text((x_gpt_zst + x_llama_zst) / 2, y_pos + 2, stars, cex = 1.5)
             }

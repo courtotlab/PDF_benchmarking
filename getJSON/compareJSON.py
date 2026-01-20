@@ -351,6 +351,7 @@ def compare_values_with_template(template, data):
              "sample_type", "analysis_type", "reference_genome"]
             if location in valid:
                 temp = float(diff_lower.split(" ")[0])
+                print(f"Partial match at {location} counted as {temp}")
             correct_matches += temp
             ic += 1 - temp
             count += temp
@@ -777,13 +778,13 @@ def main():
     ovr = pd.DataFrame(columns = ["LLM","False Positives","False Negatives","Incorrect Extractions","Correct Matches","Precision","Recall","F1score","Accuracy","Parsed","Hospital", "Prompt", "Distressed"])
 
     # Initialize single DataFrame for field-level analysis
-    '''if os.path.exists("../graphs/field_analysis.csv"):
-        field_analysis_df = pd.read_csv("../graphs/field_analysis.csv") 
+    '''if os.path.exists("../graphs/field_analysisfinal.csv"):
+        field_analysis_df = pd.read_csv("../graphs/field_analysisfinal.csv") 
     else:'''
     field_analysis_df = pd.DataFrame()
 
     json_direcs = [
-        #"localout",
+        "localout",
         "glinerOut", 
        "OllamaOut",
         "OllamaOutNP",
@@ -923,10 +924,10 @@ def main():
                 ovr = pd.concat([ovr, pd.DataFrame([temp_row])], ignore_index=True)
 
     # Save results
-    ovr.to_csv("../graphs/Hospital3.csv", index=False)
+    ovr.to_csv("../graphs/Hospitalfinal.csv", index=False)
     
     if not field_analysis_df.empty:
-        field_analysis_df.to_csv("../graphs/field_analysis3.csv", index=False)
+        field_analysis_df.to_csv("../graphs/field_analysisfinal.csv", index=False)
 
 
 if __name__ == "__main__":

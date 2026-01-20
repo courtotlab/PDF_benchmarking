@@ -206,7 +206,7 @@ def create_sample_field_data():
 if __name__ == "__main__":
     import sys
     
-    input_file = "/Users/ayu/PDF_benchmarking/graphs/field_analysis2.csv"
+    input_file = "/Users/ayu/PDF_benchmarking/graphs/field_analysisfinal.csv"
     
     if len(sys.argv) > 1:
         input_file = sys.argv[1]

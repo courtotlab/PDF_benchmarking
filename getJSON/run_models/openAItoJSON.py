@@ -95,7 +95,25 @@ def process_grouped_images_with_models(models, output_dir, image_directory="../o
     """
     # Read the prompt file content
     prompt = read_prompt_file(prompt_path)
+    processed_sources = set()
+    vision_out_dirs = [
+        "/Users/ayu/PDF_benchmarking/getJSON/outJSON/" + output_dir
+    ]
+    for vision_dir in vision_out_dirs:
+        if os.path.exists(vision_dir):
+            try:
+                vision_files = os.listdir(vision_dir)
+                for filename in vision_files:
+                    if filename.endswith('.json'):
+                        # Extract source ID (UUID) from filename
+                        source_id = filename.split('_')[0]
+                        if "distressed" in filename.lower():
+                            source_id += "_distressed"
+                    processed_sources.add(source_id)
+            except Exception as e:
+                print(f"Warning: Could not read {vision_dir}: {e}")
     
+    print(f"Found {len(processed_sources)} already processed sources, will skip them.")
     # Create output directory
     os.makedirs("outJSON", exist_ok=True)
     full_output_dir = "outJSON/" + output_dir
@@ -112,7 +130,9 @@ def process_grouped_images_with_models(models, output_dir, image_directory="../o
         print(f"\n{'='*60}")
         print(f"Processing source: {source_name} ({len(image_paths)} pages)")
         print(f"{'='*60}")
-        
+        if source_name in processed_sources:
+            print(f"Skipping already processed source: {source_name}")
+            continue
         # Try each vision model for this image group
         for model in models:
             print(f"\nProcessing {source_name} with model: {model}")
@@ -139,13 +159,14 @@ def main():
     print(f"Available models: {OPENAI_MODELS}")
     
     # Use the shared processing function
-    process_text_files_with_models(
+    '''process_text_files_with_models(
         models=OPENAI_MODELS,
         output_dir="OpenAIOut/", 
         text_directory="../output_pdfs/text/", 
         llm_function=textToLLM
     )
     
+    '''
     '''process_grouped_images_with_models(
         models=OPENAI_MODELS,
         output_dir="OpenAIVisionOutNP/",
@@ -158,13 +179,13 @@ def main():
         output_dir="OpenAIVisionOut/",
         image_directory="../output_pdfs/images/",
     )'''
-    '''process_text_files_with_models(
+    process_text_files_with_models(
         models=OPENAI_MODELS,
         output_dir="OpenAIOutNP/", 
         text_directory="../output_pdfs/text/", 
         llm_function=textToLLM,
         prompt_path="run_models/NERprompt.txt"
-    )'''
+    )
     print("Processing completed.")
 
 def main3():

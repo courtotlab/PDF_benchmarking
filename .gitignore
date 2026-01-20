@@ -37,9 +37,6 @@ test.ipynb
 
 /visualization_outputs/*
 
-run_all_llms.sh
-generate_reports.sh
-
 /getJSON/run_models/__pycache__/*
 /graphs/visResults.ipynb
 getJSON/run_models/hpc_connect.ipynb

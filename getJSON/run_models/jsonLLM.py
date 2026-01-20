@@ -194,23 +194,26 @@ def process_text_files_with_models(models, output_dir, text_directory="../output
     
     prompt = read_prompt_file(prompt_path)
     os.makedirs("outJSON", exist_ok=True)
+    text_out_dirs = [
+        "/Users/ayu/PDF_benchmarking/getJSON/outJSON/" + output_dir 
+    ]
     output_dir = f"outJSON/{output_dir}"
     
     # Get list of already processed sources from all text output directories
     processed_sources = set()
-    text_out_dirs = [
-        "/Users/ayu/PDF_benchmarking/getJSON/outJSON/" + output_dir
-    ]
     
+    print(text_out_dirs[0])
     for text_dir in text_out_dirs:
         if os.path.exists(text_dir):
             try:
-                text_files_existing = os.listdir(text_dir)
-                for filename in text_files_existing:
-                    if filename.endswith('_response.json'):
+                text_files = os.listdir(text_dir)
+                for filename in text_files:
+                    if filename.endswith('.json'):
                         # Extract source ID (UUID) from filename
                         source_id = filename.split('_')[0]
-                        processed_sources.add(source_id)
+                        if "distressed" in filename.lower():
+                            source_id += "_distressed"
+                    processed_sources.add(source_id)
             except Exception as e:
                 print(f"Warning: Could not read {text_dir}: {e}")
     
@@ -219,20 +222,18 @@ def process_text_files_with_models(models, output_dir, text_directory="../output
     text_files = get_text_files_from_directory(text_directory)
     print(f"Found {len(text_files)} text files to process")
     print(f"Running extraction with {len(models)} models...")
-    random.shuffle(text_files)  # Shuffle files for varied processing order
     for text_file in text_files:
         print(f"\n{'='*60}")
         print(f"Processing file: {text_file}")
         
         # Extract source ID from text filename (e.g., "report_fakeHospital1__060f50fd...txt")
-        source_parts = text_file.split("__")
-        if len(source_parts) >= 2:
-            source_id = source_parts[1].replace('.txt', '').split('_')[0]  # Extract UUID part
-            
-            # Check if this source has already been processed
-            if source_id in processed_sources:
-                print(f"⏭️  Skipping {text_file} - source {source_id} already processed in text output directories")
-                continue
+        s = text_file.replace("report_", "")  # Clean up source name if needed
+        # Check if this source has already been processed
+        if s in processed_sources:
+            print(f"⏭️  Skipping {s} - already processed in vision output directories")
+            continue
+        
+        print(f"{'='*60}")
         
         print(f"{'='*60}")
         
